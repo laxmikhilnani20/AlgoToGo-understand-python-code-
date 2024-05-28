@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Explanation Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@8.8.1/dist/css/shepherd.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/mode/python/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@8.8.1/dist/js/shepherd.min.js"></script>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Python Code Explanation Tool</h1>
+    </header>
+    <section class="code-section">
+        <form id="code-form" method="post">
+            <div class="code-editor">
+                <textarea id="code" name="code" rows="10" cols="30">{{ code }}</textarea>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Explain</button>
+                <button type="button" class="btn btn-secondary" onclick="visualize()">Step Through Execution</button>
+            </div>
+        </form>
+    </section>
+    {% if highlighted_code %}
+    <section class="highlighted-code">
+        <h2>Highlighted Code:</h2>
+        {{ highlighted_code | safe }}
+    </section>
+    {% endif %}
+    {% if explanation %}
+    <section class="explanation">
+        <h2>Explanation:</h2>
+        <ul id="explanation-list">
+            {% for item in explanation %}
+            <li>{{ generateExplanationText(item) }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+    <section class="visualization">
+        <div id="visualization"></div>
+    </section>
+</main>
+
+<script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,
+        mode: "python"
+    });
+
+    function visualize() {
+        var code = editor.getValue();
+        var iframe = document.createElement('iframe');
+        iframe.src = 'http://pythontutor.com/iframe-embed.html#code=' + encodeURIComponent(code) + '&codeDivHeight=400&codeDivWidth=350&verticalStack=true&py=3&rawInputLstJSON=%5B%5D&curInstr=0';
+        iframe.width = '100%';
+        iframe.height = '500px';
+        document.getElementById('visualization').innerHTML = '';
+        document.getElementById('visualization').appendChild(iframe);
+    }
+
+    function initShepherd() {
+        var tour = new Shepherd.Tour({
+            defaultStepOptions: {
+                cancelIcon: {
+                    enabled: true
+                }
+            }
+        });
+
+        tour.addStep({
+            title: 'Code Editor',
+            text: 'This is where you can write or paste your Python code.',
+            attachTo: {
+                element: '.code-editor',
+                on: 'bottom'
+            },
+            buttons: [
+                {
+                    action() {
+                        return this.next();
+                    },
+                    text: 'Next'
+                }
+            ]
+        });
+
+        tour.addStep({
+            title: 'Explanation',
+            text: 'This section displays the explanation of the code.',
+            attachTo: {
+                element: '.explanation',
+                on: 'top'
+            },
+            buttons: [
+                {
+                    action() {
+                        return this.back();
+                    },
+                    text: 'Back'
+                },
+                {
+                    action() {
+                        return this.next();
+                    },
+                    text: 'Next'
+                }
+            ]
+        });
+
+        tour.addStep({
+            title: 'Highlighted Code',
+            text: 'This section highlights the code in the editor.',
+            attachTo: {
+                element: '.highlighted-code',
+                on: 'top'
+            },
+            buttons: [
+                {
+                    action() {
+                        return this.back();
+                    },
+                    text: 'Back'
+                },
+                {
+                    action() {
+                        return this.next();
+                    },
+                    text: 'Next'
+                }
+            ]
+        });
+
+        tour.addStep({
+            title: 'Visualization',
+            text: 'This section provides a visual representation of the code execution.',
+            attachTo: {
+                element: '.visualization',
+                on: 'top'
+            },
+            buttons: [
+                {
+                    action() {
+                        return this.back();
+                    },
+                    text: 'Back'
+                },
+                {
+                    action() {
+                        return this.complete();
+                    },
+                    text: 'Done'
+                }
+            ]
+        });
+
+        tour.start();
+    }
+
+    {% if explanation %}
+    initShepherd();
+    {% endif %}
+</script>
+</body>
+</html>
